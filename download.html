@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📦 샘플 관리 시스템</title>
+  <style>
+    /* ===== 전역 ===== */
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
+    body{background:#f0f4f8;min-height:100vh;}
+
+    /* ===== 헤더 ===== */
+    .app-header{
+      background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
+      color:white;padding:16px 20px;
+      display:flex;align-items:center;justify-content:space-between;
+      box-shadow:0 3px 15px rgba(0,0,0,0.3);
+      position:sticky;top:0;z-index:100;
+    }
+    .app-header h1{font-size:1.2rem;letter-spacing:0.5px;}
+    .header-right{display:flex;align-items:center;gap:10px;}
+    .user-badge{
+      background:rgba(255,255,255,0.15);padding:5px 12px;
+      border-radius:20px;font-size:0.8rem;color:#fff;
+    }
+    .back-btn,.logout-btn{
+      background:rgba(255,255,255,0.15);border:none;color:white;
+      padding:6px 14px;border-radius:20px;cursor:pointer;font-size:0.85rem;
+      transition:background 0.2s;
+    }
+    .back-btn:hover,.logout-btn:hover{background:rgba(255,255,255,0.28);}
+
+    /* ===== 화면 전환 ===== */
+    .screen{display:none;padding:20px;max-width:620px;margin:0 auto;}
+    .screen.active{display:block;}
+
+    /* ===== 로그인 화면 ===== */
+    .login-wrap{
+      min-height:90vh;display:flex;
+      align-items:center;justify-content:center;
+    }
+    .login-box{
+      background:white;border-radius:24px;padding:36px 30px;
+      width:100%;max-width:400px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.12);
+    }
+    .login-logo{text-align:center;margin-bottom:24px;}
+    .login-logo .icon{font-size:3.5rem;}
+    .login-logo h2{font-size:1.4rem;color:#1a1a2e;margin-top:8px;}
+    .login-logo p{color:#888;font-size:0.85rem;margin-top:4px;}
+    .login-tabs{display:flex;margin-bottom:24px;border-radius:12px;overflow:hidden;border:2px solid #e0e0e0;}
+    .login-tab{
+      flex:1;padding:10px;border:none;background:#f5f5f5;
+      cursor:pointer;font-size:0.9rem;font-weight:bold;color:#888;
+      transition:all 0.2s;
+    }
+    .login-tab.active{background:#4A90E2;color:white;}
+    .form-control{
+      width:100%;padding:13px 15px;border:2px solid #e8e8e8;
+      border-radius:12px;font-size:0.95rem;outline:none;
+      transition:border-color 0.2s;margin-bottom:12px;
+    }
+    .form-control:focus{border-color:#4A90E2;}
+    .btn-primary{
+      width:100%;padding:14px;border:none;
+      background:linear-gradient(135deg,#4A90E2,#357ABD);
+      color:white;border-radius:12px;font-size:1rem;
+      font-weight:bold;cursor:pointer;
+      box-shadow:0 4px 15px rgba(74,144,226,0.35);
+      transition:opacity 0.2s;
+    }
+    .btn-primary:hover{opacity:0.9;}
+    .login-error{
+      color:#e74c3c;font-size:0.85rem;
+      text-align:center;margin-top:10px;min-height:20px;
+    }
+    .auto-login-check{
+      display:flex;align-items:center;gap:8px;
+      margin-bottom:16px;font-size:0.88rem;color:#555;cursor:pointer;
+    }
+    .auto-login-check input{width:16px;height:16px;cursor:pointer;}
+
+    /* ===== 메인 화면 ===== */
+    .main-wrap{
+      min-height:85vh;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:18px;
+    }
+    .main-logo-area{text-align:center;margin-bottom:16px;}
+    .main-logo-area .icon{font-size:4.5rem;}
+    .main-logo-area h2{font-size:1.6rem;color:#1a1a2e;margin-top:8px;}
+    .main-btn{
+      width:270px;height:76px;border:none;border-radius:20px;
+      font-size:1.2rem;font-weight:bold;color:white;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:12px;
+      transition:transform 0.15s,box-shadow 0.15s;
+      box-shadow:0 6px 20px rgba(0,0,0,0.15);
+    }
+    .main-btn:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,0.2);}
+    .main-btn:active{transform:translateY(0);}
+    .btn-store{background:linear-gradient(135deg,#4A90E2,#2471C8);}
+    .btn-list{background:linear-gradient(135deg,#27ae60,#1a8a4a);}
+
+    /* ===== 등록/수정 폼 ===== */
+    .form-group{margin-bottom:18px;}
+    .form-label{
+      font-size:0.88rem;font-weight:700;color:#333;
+      margin-bottom:7px;display:block;
+    }
+    textarea.form-control{resize:vertical;min-height:80px;}
+
+    /* ===== 이미지 ===== */
+    .img-buttons{display:flex;gap:10px;margin-bottom:12px;}
+    .img-btn{
+      flex:1;padding:11px;border:2px solid #4A90E2;
+      background:white;color:#4A90E2;border-radius:12px;
+      cursor:pointer;font-weight:bold;font-size:0.88rem;
+      transition:all 0.2s;
+    }
+    .img-btn:hover{background:#4A90E2;color:white;}
+    .img-upload-area{
+      border:2px dashed #b0c4de;border-radius:16px;
+      padding:20px;text-align:center;background:#f8faff;
+      cursor:pointer;transition:all 0.2s;margin-bottom:16px;
+      min-height:120px;display:flex;align-items:center;justify-content:center;
+    }
+    .img-upload-area:hover{border-color:#4A90E2;background:#eef4ff;}
+    .img-upload-area img{max-width:100%;max-height:200px;border-radius:10px;}
+    .img-placeholder p{color:#999;font-size:0.88rem;margin-top:6px;}
+
+    /* ===== 날짜 옵션 ===== */
+    .date-option{display:flex;gap:10px;margin-bottom:8px;}
+    .date-radio-btn{
+      flex:1;padding:10px;border:2px solid #e0e0e0;
+      background:white;border-radius:12px;cursor:pointer;
+      font-size:0.83rem;text-align:center;transition:all 0.2s;color:#666;
+    }
+    .date-radio-btn.selected{
+      border-color:#4A90E2;background:#eef4ff;
+      color:#4A90E2;font-weight:bold;
+    }
+    .date-display{
+      font-size:0.88rem;font-weight:bold;
+      margin-top:5px;padding:2px 4px;
+    }
+
+    /* ===== 통계 바 ===== */
+    .stats-bar{
+      background:white;border-radius:16px;padding:18px;
+      display:flex;justify-content:space-around;margin-bottom:14px;
+      box-shadow:0 2px 12px rgba(0,0,0,0.07);
+    }
+    .stat-item{text-align:center;}
+    .stat-num{font-size:1.9rem;font-weight:bold;}
+    .stat-label{font-size:0.75rem;color:#777;margin-top:2px;}
+    .c-blue{color:#4A90E2;} .c-orange{color:#f39c12;} .c-red{color:#e74c3c;}
+
+    /* ===== 알림 배너 ===== */
+    .alert-banner{
+      border-radius:12px;padding:12px 16px;margin-bottom:10px;
+      font-size:0.88rem;font-weight:bold;
+      display:flex;align-items:center;gap:8px;
+    }
+    .alert-red{background:#fde8e8;color:#c0392b;border:1px solid #f5c6cb;}
+    .alert-orange{background:#fef3cd;color:#856404;border:1px solid #ffeaa7;}
+
+    /* ===== 검색/필터 ===== */
+    .search-bar{
+      width:100%;padding:12px 15px;border:2px solid #e0e0e0;
+      border-radius:12px;font-size:0.92rem;outline:none;margin-bottom:12px;
+      transition:border-color 0.2s;
+    }
+    .search-bar:focus{border-color:#4A90E2;}
+    .filter-tabs{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;}
+    .filter-tab{
+      padding:7px 15px;border:2px solid #e0e0e0;
+      border-radius:20px;background:white;cursor:pointer;
+      font-size:0.82rem;white-space:nowrap;transition:all 0.2s;color:#666;
+    }
+    .filter-tab.active{border-color:#4A90E2;background:#4A90E2;color:white;font-weight:bold;}
+
+    /* ===== 카드 ===== */
+    .card{
+      background:white;border-radius:16px;padding:18px;
+      margin-bottom:13px;box-shadow:0 2px 12px rgba(0,0,0,0.07);
+      cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;
+      border-left:5px solid #4A90E2;
+    }
+    .card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.11);}
+    .card.expired{border-left-color:#e74c3c;}
+    .card.near{border-left-color:#f39c12;}
+    .card.safe{border-left-color:#27ae60;}
+    .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+    .card-name{font-size:1.05rem;font-weight:bold;color:#1a1a2e;}
+    .status-badge{
+      font-size:0.72rem;padding:3px 10px;border-radius:20px;
+      font-weight:bold;white-space:nowrap;
+    }
+    .badge-expired{background:#fde8e8;color:#e74c3c;}
+    .badge-near{background:#fef3cd;color:#e67e22;}
+    .badge-safe{background:#e8f8ef;color:#27ae60;}
+    .card-info{font-size:0.85rem;color:#666;margin:3px 0;}
+    .card-actions{display:flex;gap:8px;margin-top:12px;}
+    .btn-edit{
+      flex:1;padding:9px;border:2px solid #4A90E2;
+      background:white;color:#4A90E2;border-radius:10px;
+      cursor:pointer;font-weight:bold;font-size:0.88rem;transition:all 0.2s;
+    }
+    .btn-edit:hover{background:#4A90E2;color:white;}
+    .btn-dispose{
+      flex:1;padding:9px;border:none;
+      background:linear-gradient(135deg,#e74c3c,#c0392b);
+      color:white;border-radius:10px;cursor:pointer;font-weight:bold;font-size:0.88rem;
+      transition:opacity 0.2s;
+    }
+    .btn-dispose:hover{opacity:0.85;}
+
+    /* ===== 저장/엑셀 버튼 ===== */
+    .btn-save{
+      width:100%;padding:15px;border:none;
+      background:linear-gradient(135deg,#4A90E2,#357ABD);
+      color:white;border-radius:14px;font-size:1.05rem;
+      font-weight:bold;cursor:pointer;margin-top:8px;
+      box-shadow:0 4px 15px rgba(74,144,226,0.35);transition:opacity 0.2s;
+    }
+    .btn-save:hover{opacity:0.9;}
+    .btn-excel{
+      width:100%;padding:14px;border:none;
+      background:linear-gradient(135deg,#27ae60,#1a8a4a);
+      color:white;border-radius:14px;font-size:0.98rem;
+      font-weight:bold;cursor:pointer;margin-top:10px;
+      box-shadow:0 4px 15px rgba(39,174,96,0.35);transition:opacity 0.2s;
+    }
+    .btn-excel:hover{opacity:0.9;}
+
+    /* ===== 모달 ===== */
+    .modal-overlay{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,0.55);z-index:999;
+      justify-content:center;align-items:flex-end;
+    }
+    .modal-overlay.active{display:flex;}
+    .modal-box{
+      background:white;width:100%;max-width:620px;
+      border-radius:24px 24px 0 0;padding:26px;
+      max-height:88vh;overflow-y:auto;
+      animation:slideUp 0.28s ease;
+    }
+    @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+    .modal-title{font-size:1.2rem;font-weight:bold;color:#1a1a2e;margin-bottom:16px;text-align:center;}
+    .modal-img{width:100%;max-height:210px;object-fit:cover;border-radius:12px;margin-bottom:14px;}
+    .modal-detail{font-size:0.93rem;color:#555;margin:9px 0;padding-bottom:9px;border-bottom:1px solid #f0f0f0;}
+    .modal-detail:last-child{border-bottom:none;}
+    .modal-detail span{font-weight:bold;color:#1a1a2e;}
+    .modal-close{
+      width:100%;padding:13px;border:2px solid #ddd;
+      background:white;border-radius:12px;cursor:pointer;
+      font-size:0.98rem;margin-top:14px;color:#555;
+    }
+    .modal-close:hover{background:#f5f5f5;}
+
+    /* ===== 빈 상태 / 로딩 ===== */
+    .empty-state{text-align:center;padding:60px 20px;color:#bbb;}
+    .empty-state .icon{font-size:3.5rem;margin-bottom:14px;}
+    .loading-spinner{
+      text-align:center;padding:50px;color:#888;
+      display:flex;flex-direction:column;align-items:center;gap:14px;
+    }
+    .spinner{
+      width:36px;height:36px;border:4px solid #e0e0e0;
+      border-top-color:#4A90E2;border-radius:50%;
+      animation:spin 0.8s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* ===== 토스트 ===== */
+    #toast{
+      position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+      background:#1a1a2e;color:white;padding:12px 26px;
+      border-radius:25px;font-size:0.92rem;z-index:9999;
+      opacity:0;transition:opacity 0.3s;pointer-events:none;
+      white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.25);
+    }
+    #toast.show{opacity:1;}
+
+    /* ===== 전체화면 로딩 ===== */
+    #globalLoading{
+      position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e,#0f3460);
+      display:flex;flex-direction:column;align-items:center;
+      justify-content:center;z-index:9999;color:white;gap:20px;
+    }
+    #globalLoading .icon{font-size:4rem;}
+    #globalLoading p{font-size:1.1rem;opacity:0.8;}
+    #globalLoading.hide{display:none;}
+
+    @media(max-width:400px){
+      .main-btn{width:240px;height:68px;font-size:1.05rem;}
+      .screen{padding:14px;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== 전체화면 초기 로딩 ===== -->
+<div id="globalLoading">
+  <div class="icon">📦</div>
+  <div class="spinner" style="border-top-color:white;border-color:rgba(255,255,255,0.2);border-top-color:white;"></div>
+  <p>샘플 관리 시스템 로딩 중...</p>
+</div>
+
+<!-- ===== 헤더 ===== -->
+<div class="app-header" id="appHeader" style="display:none;">
+  <button class="back-btn" id="backBtn" onclick="goBack()" style="visibility:hidden;">← 뒤로</button>
+  <h1 id="headerTitle">📦 샘플 관리</h1>
+  <div class="header-right">
+    <span class="user-badge" id="userBadge" style="display:none;"></span>
+    <button class="logout-btn" id="logoutBtn" onclick="logoutUser()" style="display:none;">로그아웃</button>
+  </div>
+</div>
+
+<!-- ===== 토스트 ===== -->
+<div id="toast"></div>
+
+<!-- ========================================= -->
+<!-- 화면 0: 로그인                             -->
+<!-- ========================================= -->
+<div class="screen active" id="screen-login">
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="icon">📦</div>
+        <h2>샘플 관리 시스템</h2>
+        <p>팀원 전용 — 로그인이 필요합니다</p>
+      </div>
+
+      <!-- 로그인 / 회원가입 탭 -->
+      <div class="login-tabs">
+        <button class="login-tab active" id="tabLogin"  onclick="switchTab('login')">🔐 로그인</button>
+        <button class="login-tab"        id="tabSignup" onclick="switchTab('signup')">✉️ 계정 만들기</button>
+      </div>
+
+      <input type="email"    id="authEmail" class="form-control" placeholder="이메일 주소"/>
+      <input type="password" id="authPw"    class="form-control" placeholder="비밀번호 (6자 이상)"/>
+
+      <!-- 이름 입력 (회원가입 시만 표시) -->
+      <div id="nameField" style="display:none;">
+        <input type="text" id="authName" class="form-control" placeholder="이름 (팀에서 표시될 이름)"/>
+      </div>
+
+      <!-- 자동 로그인 체크박스 -->
+      <label class="auto-login-check" id="autoLoginWrap">
+        <input type="checkbox" id="autoLoginCheck" checked/>
+        자동 로그인 (다음에도 자동으로 로그인)
+      </label>
+
+      <button class="btn-primary" id="authBtn" onclick="handleAuth()">🔐 로그인</button>
+      <div class="login-error" id="authError"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================= -->
+<!-- 화면 1: 메인                               -->
+<!-- ========================================= -->
+<div class="screen" id="screen-main">
+  <div class="main-wrap">
+    <div class="main-logo-area">
+      <div class="icon">📦</div>
+      <h2>샘플 관리 시스템</h2>
+    </div>
+    <button class="main-btn btn-store" onclick="showScreen('add')">📥 샘플 보관</button>
+    <button class="main-btn btn-list"  onclick="showScreen('list')">📋 샘플 리스트</button>
+  </div>
+</div>
+
+<!-- ========================================= -->
+<!-- 화면 2: 샘플 등록                          -->
+<!-- ========================================= -->
+<div class="screen" id="screen-add">
+
+  <div class="img-buttons">
+    <button class="img-btn" onclick="document.getElementById('cameraInput').click()">📷 사진 촬영</button>
+    <button class="img-btn" onclick="document.getElementById('galleryInput').click()">🖼️ 갤러리</button>
+  </div>
+  <input type="file" id="cameraInput"  accept="image/*" capture="environment" style="display:none" onchange="handleImage(this,'add')">
+  <input type="file" id="galleryInput" accept="image/*" style="display:none" onchange="handleImage(this,'add')">
+
+  <div class="img-upload-area" onclick="document.getElementById('galleryInput').click()">
+    <div id="addImgPlaceholder" class="img-placeholder">
+      <div style="font-size:2.5rem;">📸</div>
+      <p>사진을 촬영하거나 갤러리에서 선택</p>
+    </div>
+    <img id="addImgPreview" src="" alt="" style="display:none;"/>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">📌 샘플명 *</label>
+    <input type="text" id="sampleName" class="form-control" placeholder="샘플명을 입력하세요"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label">👤 담당자 *</label>
+    <input type="text" id="manager" class="form-control" placeholder="담당자 이름"/>
+  </div>
+
+  <!-- 입고날짜 -->
+  <div class="form-group">
+    <label class="form-label">📅 입고날짜</label>
+    <div class="date-option">
+      <div class="date-radio-btn selected" id="stockToday"  onclick="setStockMode('today')">📅 오늘 날짜</div>
+      <div class="date-radio-btn"          id="stockCustom" onclick="setStockMode('custom')">✏️ 직접 선택</div>
+    </div>
+    <input type="date" id="stockDateInput" class="form-control" style="display:none;margin-top:8px;" onchange="onStockDateChange()"/>
+    <div id="stockDateDisplay" class="date-display" style="color:#4A90E2;"></div>
+  </div>
+
+  <!-- 폐기날짜 -->
+  <div class="form-group">
+    <label class="form-label">🗑️ 폐기날짜</label>
+    <div class="date-option">
+      <div class="date-radio-btn selected" id="disposeAuto"   onclick="setDisposeMode('auto')">🔄 입고 후 1년</div>
+      <div class="date-radio-btn"          id="disposeCustom" onclick="setDisposeMode('custom')">✏️ 직접 선택</div>
+    </div>
+    <input type="date" id="disposeDateInput" class="form-control" style="display:none;margin-top:8px;"/>
+    <div id="disposeDateDisplay" class="date-display" style="color:#e74c3c;"></div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">📝 비고</label>
+    <textarea id="note" class="form-control" placeholder="추가 메모 (선택)"></textarea>
+  </div>
+
+  <button class="btn-save" onclick="saveSample()">💾 샘플 저장</button>
+</div>
+
+<!-- ========================================= -->
+<!-- 화면 3: 리스트                             -->
+<!-- ========================================= -->
+<div class="screen" id="screen-list">
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-num c-blue"   id="statTotal">0</div>
+      <div class="stat-label">📦 전체 보관</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num c-orange" id="statNear">0</div>
+      <div class="stat-label">⚠️ 폐기 임박</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num c-red"    id="statExpired">0</div>
+      <div class="stat-label">⛔ 폐기 경과</div>
+    </div>
+  </div>
+
+  <div id="alertBanners"></div>
+
+  <input type="text" class="search-bar" id="searchInput"
+    placeholder="🔍 샘플명 또는 담당자 검색..." oninput="renderList()"/>
+
+  <div class="filter-tabs">
+    <div class="filter-tab active" data-f="all"     onclick="setFilter('all')">전체</div>
+    <div class="filter-tab"        data-f="expired" onclick="setFilter('expired')">⛔ 경과</div>
+    <div class="filter-tab"        data-f="near"    onclick="setFilter('near')">⚠️ 임박</div>
+    <div class="filter-tab"        data-f="safe"    onclick="setFilter('safe')">✅ 안전</div>
+  </div>
+
+  <div id="sampleList">
+    <div class="loading-spinner"><div class="spinner"></div><span>불러오는 중...</span></div>
+  </div>
+
+  <button class="btn-excel" onclick="exportExcel()">📊 엑셀로 저장하기</button>
+</div>
+
+<!-- ========================================= -->
+<!-- 화면 4: 수정                               -->
+<!-- ========================================= -->
+<div class="screen" id="screen-edit">
+
+  <div class="img-buttons">
+    <button class="img-btn" onclick="document.getElementById('editCameraInput').click()">📷 사진 변경</button>
+    <button class="img-btn" onclick="document.getElementById('editGalleryInput').click()">🖼️ 갤러리</button>
+  </div>
+  <input type="file" id="editCameraInput"  accept="image/*" capture="environment" style="display:none" onchange="handleImage(this,'edit')">
+  <input type="file" id="editGalleryInput" accept="image/*" style="display:none" onchange="handleImage(this,'edit')">
+
+  <div class="img-upload-area">
+    <div id="editImgPlaceholder" class="img-placeholder">
+      <div style="font-size:2.5rem;">📸</div><p>이미지 변경 가능</p>
+    </div>
+    <img id="editImgPreview" src="" alt="" style="display:none;max-width:100%;border-radius:10px;"/>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">📌 샘플명 *</label>
+    <input type="text" id="editSampleName" class="form-control"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label">👤 담당자 *</label>
+    <input type="text" id="editManager" class="form-control"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label">📅 입고날짜</label>
+    <input type="date" id="editStockDate" class="form-control"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label">🗑️ 폐기날짜</label>
+    <input type="date" id="editDisposeDate" class="form-control"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label">📝 비고</label>
+    <textarea id="editNote" class="form-control"></textarea>
+  </div>
+  <input type="hidden" id="editId"/>
+  <button class="btn-save" onclick="updateSample()">✏️ 수정 완료</button>
+</div>
+
+<!-- ========================================= -->
+<!-- 상세 모달                                  -->
+<!-- ========================================= -->
+<div class="modal-overlay" id="detailModal" onclick="handleModalClick(event)">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle"></div>
+    <img id="modalImg" class="modal-img" src="" alt="" style="display:none;"/>
+    <div id="modalContent"></div>
+    <button class="modal-close" onclick="closeModal()">닫기</button>
+  </div>
+</div>
+
+<!-- ===== SheetJS (엑셀) ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- ===== Firebase ===== -->
+<script type="module">
+import { initializeApp }                            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc,
+         onSnapshot, doc, updateDoc,
+         query, orderBy, serverTimestamp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword,
+         createUserWithEmailAndPassword,
+         onAuthStateChanged, signOut,
+         setPersistence, browserLocalPersistence,
+         browserSessionPersistence }                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// =====================================================
+// 🔥 Firebase 설정값 — 아래 값을 본인 것으로 교체하세요
+// =====================================================
+const firebaseConfig = {
+  apiKey:            "AIzaSyCNFyk8Wu3_NAHquTPvvBATF6N1cy-JQ88",
+  authDomain:        "avpsamples.firebaseapp.com",
+  projectId:         "avpsamples",
+  storageBucket:     "avpsamples.firebasestorage.app",
+  messagingSenderId: "431000014177",
+  appId:             "1:431000014177:web:f95ba07436d3822bbfc920"
+};
+// =====================================================
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+// 전역 노출
+window._db   = db;
+window._auth = auth;
+window._fns  = { collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy, serverTimestamp };
+window._authFns = { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence };
+
+// =====================================================
+// 🔐 로그인 상태 자동 감지 (자동 로그인 핵심!)
+// =====================================================
+onAuthStateChanged(auth, (user) => {
+  document.getElementById('globalLoading').classList.add('hide');
+  document.getElementById('appHeader').style.display = 'flex';
+
+  if (user) {
+    // ✅ 이미 로그인 상태 → 바로 메인으로
+    window.currentUser = user;
+    const badge = document.getElementById('userBadge');
+    badge.textContent = '👤 ' + (user.displayName || user.email.split('@')[0]);
+    badge.style.display = 'inline-block';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+    showScreen('main');
+    window.startRealtimeListener();
+  } else {
+    // ❌ 비로그인 → 로그인 화면으로
+    window.currentUser = null;
+    document.getElementById('userBadge').style.display  = 'none';
+    document.getElementById('logoutBtn').style.display  = 'none';
+    showScreen('login');
+  }
+});
+</script>
+
+<script>
+// ======================================================
+// 상태 변수
+// ======================================================
+let samples       = [];
+let currentFilter = 'all';
+let stockMode     = 'today';
+let disposeMode   = 'auto';
+let addImgBase64  = null;
+let editImgBase64 = null;
+let currentScreen = 'login';
+let currentTab    = 'login';
+let unsubscribe   = null;
+
+// ======================================================
+// 날짜 유틸
+// ======================================================
+const toDateStr   = d => d.toISOString().split('T')[0];
+const todayStr    = () => toDateStr(new Date());
+const plusOneYear = s => { const d=new Date(s); d.setFullYear(d.getFullYear()+1); return toDateStr(d); };
+const diffDays    = s => Math.ceil((new Date(s)-new Date(todayStr()))/86400000);
+
+// ======================================================
+// 화면 전환
+// ======================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  currentScreen = name;
+
+  const titles = {
+    login:'📦 샘플 관리 시스템', main:'📦 샘플 관리 시스템',
+    add:'📥 샘플 보관 등록', list:'📋 샘플 리스트', edit:'✏️ 샘플 수정'
+  };
+  document.getElementById('headerTitle').textContent = titles[name]||'';
+
+  const backBtn = document.getElementById('backBtn');
+  backBtn.style.visibility = (name==='main'||name==='login') ? 'hidden' : 'visible';
+
+  if (name==='add')  resetAddForm();
+  if (name==='list') renderList();
+}
+
+function goBack() {
+  if (currentScreen==='edit') showScreen('list');
+  else showScreen('main');
+}
+
+// ======================================================
+// 로그인 탭 전환
+// ======================================================
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('tabSignup').classList.toggle('active', tab==='signup');
+  document.getElementById('nameField').style.display  = tab==='signup' ? 'block' : 'none';
+  document.getElementById('autoLoginWrap').style.display = tab==='login' ? 'flex' : 'none';
+  document.getElementById('authBtn').textContent = tab==='login' ? '🔐 로그인' : '✉️ 계정 만들기';
+  document.getElementById('authError').textContent = '';
+}
+
+// ======================================================
+// 로그인 / 회원가입 처리
+// ======================================================
+async function handleAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pw    = document.getElementById('authPw').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+
+  if (!email || !pw) { errEl.textContent='이메일과 비밀번호를 입력해주세요'; return; }
+  if (pw.length < 6) { errEl.textContent='비밀번호는 6자 이상이어야 합니다'; return; }
+
+  const { signInWithEmailAndPassword, createUserWithEmailAndPassword,
+          setPersistence, browserLocalPersistence, browserSessionPersistence } = window._authFns;
+  const auth = window._auth;
+
+  try {
+    if (currentTab === 'login') {
+      // ✅ 자동 로그인 여부에 따라 지속성 설정
+      const autoLogin = document.getElementById('autoLoginCheck').checked;
+      await setPersistence(auth, autoLogin ? browserLocalPersistence : browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, email, pw);
+      showToast('✅ 로그인 성공!');
+
+    } else {
+      // 회원가입
+      const name = document.getElementById('authName').value.trim();
+      if (!name) { errEl.textContent='이름을 입력해주세요'; return; }
+      const cred = await createUserWithEmailAndPassword(auth, email, pw);
+
+      // displayName 저장
+      const { updateProfile } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+      await updateProfile(cred.user, { displayName: name });
+      showToast('✅ 계정이 생성되었습니다! 환영합니다 ' + name + '님');
+    }
+  } catch (e) {
+    const msgs = {
+      'auth/user-not-found':      '등록되지 않은 이메일입니다',
+      'auth/wrong-password':      '비밀번호가 틀렸습니다',
+      'auth/email-already-in-use':'이미 사용 중인 이메일입니다',
+      'auth/invalid-email':       '올바른 이메일 형식이 아닙니다',
+      'auth/too-many-requests':   '잠시 후 다시 시도해주세요',
+      'auth/invalid-credential':  '이메일 또는 비밀번호가 틀렸습니다',
+    };
+    errEl.textContent = '❌ ' + (msgs[e.code] || '오류가 발생했습니다: '+e.message);
+  }
+}
+
+// 엔터키로 로그인
+document.getElementById('authPw').addEventListener('keydown', e => {
+  if (e.key==='Enter') handleAuth();
+});
+
+// ======================================================
+// 로그아웃
+// ======================================================
+async function logoutUser() {
+  if (!confirm('로그아웃 하시겠습니까?')) return;
+  if (unsubscribe) { unsubscribe(); unsubscribe=null; }
+  await window._authFns.signOut(window._auth);
+  samples = [];
+  showToast('👋 로그아웃 되었습니다');
+}
+
+// ======================================================
+// 실시간 리스너
+// ======================================================
+window.startRealtimeListener = function() {
+  if (unsubscribe) return; // 중복 방지
+  const { collection, onSnapshot, query, orderBy } = window._fns;
+  const q = query(collection(window._db,'samples'), orderBy('createdAt','desc'));
+  unsubscribe = onSnapshot(q, snap => {
+    samples = snap.docs
+      .map(d => ({id:d.id,...d.data()}))
+      .filter(s => s.status==='보관중');
+    if (currentScreen==='list') renderList();
+  }, err => console.error('Firestore 오류:',err));
+};
+
+// ======================================================
+// 이미지 처리 (압축 포함 — 무료 유지)
+// ======================================================
+function handleImage(input, mode) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    // Canvas로 이미지 압축 (최대 600px, 품질 0.6)
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h*MAX/w); w = MAX; }
+        else       { w = Math.round(w*MAX/h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.6);
+
+      if (mode==='add') {
+        addImgBase64 = compressed;
+        document.getElementById('addImgPlaceholder').style.display='none';
+        const el = document.getElementById('addImgPreview');
+        el.src=compressed; el.style.display='block';
+      } else {
+        editImgBase64 = compressed;
+        document.getElementById('editImgPlaceholder').style.display='none';
+        const el = document.getElementById('editImgPreview');
+        el.src=compressed; el.style.display='block';
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ======================================================
+// 날짜 모드
+// ======================================================
+function setStockMode(mode) {
+  stockMode = mode;
+  document.getElementById('stockToday').classList.toggle('selected', mode==='today');
+  document.getElementById('stockCustom').classList.toggle('selected', mode==='custom');
+  const inp = document.getElementById('stockDateInput');
+  if (mode==='today') {
+    inp.style.display='none';
+    document.getElementById('stockDateDisplay').textContent = '📅 '+todayStr();
+    updateAutoDispose(todayStr());
+  } else {
+    inp.style.display='block';
+    document.getElementById('stockDateDisplay').textContent='';
+  }
+}
+
+function onStockDateChange() {
+  const v = document.getElementById('stockDateInput').value;
+  if (v && disposeMode==='auto') updateAutoDispose(v);
+}
+
+function setDisposeMode(mode) {
+  disposeMode = mode;
+  document.getElementById('disposeAuto').classList.toggle('selected', mode==='auto');
+  document.getElementById('disposeCustom').classList.toggle('selected', mode==='custom');
+  const inp = document.getElementById('disposeDateInput');
+  if (mode==='auto') {
+    inp.style.display='none';
+    const s = stockMode==='today' ? todayStr() : document.getElementById('stockDateInput').value;
+    if (s) updateAutoDispose(s);
+  } else {
+    inp.style.display='block';
+    document.getElementById('disposeDateDisplay').textContent='';
+  }
+}
+
+function updateAutoDispose(stockDateStr) {
+  if (disposeMode!=='auto') return;
+  document.getElementById('disposeDateDisplay').textContent = '🗑️ '+plusOneYear(stockDateStr);
+}
+
+function getStockDate()   { return stockMode==='today'?todayStr():document.getElementById('stockDateInput').value; }
+function getDisposeDate() { return disposeMode==='auto'?plusOneYear(getStockDate()):document.getElementById('disposeDateInput').value; }
+
+// ======================================================
+// 폼 초기화
+// ======================================================
+function resetAddForm() {
+  addImgBase64=null;
+  ['sampleName','manager','note'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('addImgPreview').style.display='none';
+  document.getElementById('addImgPlaceholder').style.display='flex';
+  stockMode='today'; disposeMode='auto';
+  document.getElementById('stockToday').classList.add('selected');
+  document.getElementById('stockCustom').classList.remove('selected');
+  document.getElementById('disposeAuto').classList.add('selected');
+  document.getElementById('disposeCustom').classList.remove('selected');
+  document.getElementById('stockDateInput').style.display='none';
+  document.getElementById('disposeDateInput').style.display='none';
+  document.getElementById('stockDateDisplay').textContent='📅 '+todayStr();
+  document.getElementById('disposeDateDisplay').textContent='🗑️ '+plusOneYear(todayStr());
+}
+
+// ======================================================
+// 샘플 저장
+// ======================================================
+async function saveSample() {
+  const name  = document.getElementById('sampleName').value.trim();
+  const mgr   = document.getElementById('manager').value.trim();
+  const note  = document.getElementById('note').value.trim();
+  const sDate = getStockDate();
+  const dDate = getDisposeDate();
+
+  if (!name)  return showToast('⚠️ 샘플명을 입력해주세요');
+  if (!mgr)   return showToast('⚠️ 담당자를 입력해주세요');
+  if (!sDate) return showToast('⚠️ 입고날짜를 선택해주세요');
+  if (!dDate) return showToast('⚠️ 폐기날짜를 선택해주세요');
+
+  try {
+    const { collection, addDoc, serverTimestamp } = window._fns;
+    await addDoc(collection(window._db,'samples'), {
+      sampleName:  name,
+      manager:     mgr,
+      note:        note,
+      stockDate:   sDate,
+      disposeDate: dDate,
+      imageBase64: addImgBase64||'',
+      status:      '보관중',
+      registeredBy: window.currentUser?.displayName || window.currentUser?.email || '알 수 없음',
+      createdAt:   serverTimestamp()
+    });
+    showToast('✅ 샘플이 저장되었습니다!');
+    setTimeout(() => showScreen('list'), 700);
+  } catch(e) {
+    showToast('❌ 저장 실패: '+e.message);
+    console.error(e);
+  }
+}
+
+// ======================================================
+// 리스트 렌더링
+// ======================================================
+function setFilter(f) {
+  currentFilter=f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.f===f));
+  renderList();
+}
+
+function renderList() {
+  const search = (document.getElementById('searchInput')?.value||'').toLowerCase();
+  let list = samples;
+
+  if (search) list = list.filter(s =>
+    s.sampleName.toLowerCase().includes(search) ||
+    s.manager.toLowerCase().includes(search)
+  );
+
+  list = list.filter(s => {
+    const d = diffDays(s.disposeDate);
+    if (currentFilter==='expired') return d<0;
+    if (currentFilter==='near')    return d>=0&&d<=30;
+    if (currentFilter==='safe')    return d>30;
+    return true;
+  });
+
+  // 통계
+  const total   = samples.length;
+  const expired = samples.filter(s=>diffDays(s.disposeDate)<0).length;
+  const near    = samples.filter(s=>{const d=diffDays(s.disposeDate);return d>=0&&d<=30;}).length;
+  document.getElementById('statTotal').textContent   = total;
+  document.getElementById('statNear').textContent    = near;
+  document.getElementById('statExpired').textContent = expired;
+
+  // 알림 배너
+  let banners='';
+  if (expired>0) banners+=`<div class="alert-banner alert-red">⛔ 폐기 기간이 경과된 샘플 <strong>${expired}개</strong>! 즉시 확인하세요.</div>`;
+  if (near>0)    banners+=`<div class="alert-banner alert-orange">⚠️ 30일 내 폐기 예정 샘플 <strong>${near}개</strong>가 있습니다.</div>`;
+  document.getElementById('alertBanners').innerHTML=banners;
+
+  // 카드
+  const container = document.getElementById('sampleList');
+  if (list.length===0) {
+    container.innerHTML=`<div class="empty-state"><div class="icon">📭</div><p>표시할 샘플이 없습니다</p></div>`;
+    return;
+  }
+
+  container.innerHTML = list.map(s => {
+    const d=diffDays(s.disposeDate);
+    let bc,bt,cc;
+    if      (d<0)    {bc='badge-expired';bt=`⛔ ${Math.abs(d)}일 경과`;cc='expired';}
+    else if (d<=30)  {bc='badge-near';   bt=`⚠️ ${d}일 전`;           cc='near';}
+    else             {bc='badge-safe';   bt=`✅ ${d}일 남음`;          cc='safe';}
+    return `
+    <div class="card ${cc}" onclick="openDetail('${s.id}')">
+      <div class="card-header">
+        <div class="card-name">${s.sampleName}</div>
+        <span class="status-badge ${bc}">${bt}</span>
+      </div>
+      <div class="card-info">👤 ${s.manager}</div>
+      <div class="card-info">📅 입고: ${s.stockDate} &nbsp;|&nbsp; 🗑️ 폐기: ${s.disposeDate}</div>
+      ${s.note?`<div class="card-info">📝 ${s.note}</div>`:''}
+      ${s.registeredBy?`<div class="card-info" style="color:#aaa;font-size:0.78rem;">등록: ${s.registeredBy}</div>`:''}
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn-edit"    onclick="openEdit('${s.id}')">✏️ 수정</button>
+        <button class="btn-dispose" onclick="disposeSample('${s.id}','${s.sampleName}')">🗑️ 폐기</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ======================================================
+// 상세 모달
+// ======================================================
+function openDetail(id) {
+  const s = samples.find(x=>x.id===id);
+  if (!s) return;
+  const d=diffDays(s.disposeDate);
+  const st = d<0?`⛔ 폐기 ${Math.abs(d)}일 경과`:d<=30?`⚠️ 폐기 ${d}일 전`:`✅ ${d}일 남음`;
+
+  document.getElementById('modalTitle').textContent='📦 '+s.sampleName;
+  const mi=document.getElementById('modalImg');
+  if (s.imageBase64) { mi.src=s.imageBase64; mi.style.display='block'; }
+  else               { mi.style.display='none'; }
+
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-detail">📌 샘플명: <span>${s.sampleName}</span></div>
+    <div class="modal-detail">👤 담당자: <span>${s.manager}</span></div>
+    <div class="modal-detail">📅 입고날짜: <span>${s.stockDate}</span></div>
+    <div class="modal-detail">🗑️ 폐기날짜: <span>${s.disposeDate}</span></div>
+    <div class="modal-detail">🔔 폐기 상태: <span>${st}</span></div>
+    ${s.note?`<div class="modal-detail">📝 비고: <span>${s.note}</span></div>`:''}
+    ${s.registeredBy?`<div class="modal-detail">🙋 등록자: <span>${s.registeredBy}</span></div>`:''}
+  `;
+  document.getElementById('detailModal').classList.add('active');
+}
+function closeModal()         { document.getElementById('detailModal').classList.remove('active'); }
+function handleModalClick(e)  { if (e.target===document.getElementById('detailModal')) closeModal(); }
+
+// ======================================================
+// 수정 열기
+// ======================================================
+function openEdit(id) {
+  const s=samples.find(x=>x.id===id);
+  if (!s) return;
+  document.getElementById('editId').value          = id;
+  document.getElementById('editSampleName').value  = s.sampleName;
+  document.getElementById('editManager').value     = s.manager;
+  document.getElementById('editStockDate').value   = s.stockDate;
+  document.getElementById('editDisposeDate').value = s.disposeDate;
+  document.getElementById('editNote').value        = s.note||'';
+  editImgBase64 = s.imageBase64||null;
+  const img=document.getElementById('editImgPreview');
+  const ph=document.getElementById('editImgPlaceholder');
+  if (editImgBase64) { img.src=editImgBase64; img.style.display='block'; ph.style.display='none'; }
+  else               { img.style.display='none'; ph.style.display='flex'; }
+  showScreen('edit');
+}
+
+// ======================================================
+// 수정 저장
+// ======================================================
+async function updateSample() {
+  const id    = document.getElementById('editId').value;
+  const name  = document.getElementById('editSampleName').value.trim();
+  const mgr   = document.getElementById('editManager').value.trim();
+  const sDate = document.getElementById('editStockDate').value;
+  const dDate = document.getElementById('editDisposeDate').value;
+  const note  = document.getElementById('editNote').value.trim();
+
+  if (!name) return showToast('⚠️ 샘플명을 입력해주세요');
+  if (!mgr)  return showToast('⚠️ 담당자를 입력해주세요');
+
+  try {
+    const { doc, updateDoc } = window._fns;
+    await updateDoc(doc(window._db,'samples',id), {
+      sampleName:  name,
+      manager:     mgr,
+      stockDate:   sDate,
+      disposeDate: dDate,
+      note:        note,
+      imageBase64: editImgBase64||'',
+      updatedBy:   window.currentUser?.displayName || window.currentUser?.email || '알 수 없음',
+    });
+    showToast('✅ 수정이 완료되었습니다!');
+    setTimeout(()=>showScreen('list'),700);
+  } catch(e) { showToast('❌ 수정 실패: '+e.message); }
+}
+
+// ======================================================
+// 폐기 처리
+// ======================================================
+async function disposeSample(id, name) {
+  if (!confirm(`[${name}]\n샘플을 폐기하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  try {
+    const { doc, updateDoc } = window._fns;
+    await updateDoc(doc(window._db,'samples',id), {
+      status: '폐기',
+      disposedBy:  window.currentUser?.displayName || window.currentUser?.email || '알 수 없음',
+      disposedAt:  new Date().toISOString().split('T')[0]
+    });
+    showToast('🗑️ 폐기 처리 완료');
+  } catch(e) { showToast('❌ 오류: '+e.message); }
+}
+
+// ======================================================
+// 엑셀 내보내기
+// ======================================================
+function exportExcel() {
+  if (samples.length===0) return showToast('⚠️ 내보낼 샘플이 없습니다');
+  const data = samples.map((s,i)=>({
+    'No.':      i+1,
+    '샘플명':   s.sampleName,
+    '담당자':   s.manager,
+    '입고날짜': s.stockDate,
+    '폐기날짜': s.disposeDate,
+    '잔여일수': diffDays(s.disposeDate),
+    '상태':     diffDays(s.disposeDate)<0?'⛔ 경과':diffDays(s.disposeDate)<=30?'⚠️ 임박':'✅ 안전',
+    '비고':     s.note||'',
+    '등록자':   s.registeredBy||''
+  }));
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:5},{wch:22},{wch:12},{wch:14},{wch:14},{wch:10},{wch:10},{wch:25},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'샘플목록');
+  XLSX.writeFile(wb,`샘플목록_${todayStr()}.xlsx`);
+  showToast('📊 엑셀 파일이 저장되었습니다!');
+}
+
+// ======================================================
+// 토스트
+// ======================================================
+function showToast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
